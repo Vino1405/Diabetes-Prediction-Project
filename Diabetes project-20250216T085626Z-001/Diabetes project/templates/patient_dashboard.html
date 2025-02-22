@@ -230,6 +230,47 @@
               }
           });
         </script>
+
+        <h3>Medical Prediction Distribution</h3>
+        <canvas id="predictionPieChart" width="400" height="400"></canvas>
+        
+        <script>
+          // Count predictions using Jinja filters.
+          var diabetesCount = {{ records | selectattr("prediction_result", "equalto", "Diabetes") | list | length }};
+          var noDiabetesCount = {{ records | selectattr("prediction_result", "ne", "Diabetes") | list | length }};
+        
+          var ctx = document.getElementById('predictionPieChart').getContext('2d');
+          var predictionPieChart = new Chart(ctx, {
+              type: 'pie',
+              data: {
+                  labels: ['Diabetes', 'No Diabetes'],
+                  datasets: [{
+                      data: [diabetesCount, noDiabetesCount],
+                      backgroundColor: [
+                          'rgba(255, 99, 132, 0.7)',
+                          'rgba(54, 162, 235, 0.7)'
+                      ],
+                      borderColor: [
+                          'rgba(255, 99, 132, 1)',
+                          'rgba(54, 162, 235, 1)'
+                      ],
+                      borderWidth: 1
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  plugins: {
+                      legend: {
+                          position: 'top'
+                      },
+                      title: {
+                          display: true,
+                          text: 'Prediction Distribution'
+                      }
+                  }
+              }
+          });
+        </script>
     </div>
 </body>
 </html>
