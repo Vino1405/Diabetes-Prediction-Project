@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patient Dashboard</title>
+    <!-- Include Chart.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 16px;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome, {{ user.name }}</h2>
+        
+        <h3>Your Information</h3>
+        <p>Email: {{ user.email }}</p>
+        <p>Age: {{ user.age or 'Not provided' }}</p>
+        
+        <h3>Medical History</h3>
+        {% if records %}
+          <table>
+             <tr>
+               <th>Created Date & Time</th>
+               <th>Updated Date & Time</th>
+               <th>Pregnancies</th>
+               <th>Glucose</th>
+               <th>Blood Pressure</th>
+               <th>Skin Thickness</th>
+               <th>Insulin</th>
+               <th>BMI</th>
+               <th>Diabetes Pedigree Function</th>
+               <th>Prediction</th>
+             </tr>
+             {% for record in records %}
+             <tr>
+               <td>{{ record.get('created_datetime') | formatdatetime }}</td>
+               <td>{{ record.get('updated_datetime') | formatdatetime }}</td>
+               <td>{{ record.get('Pregnancies') }}</td>
+               <td>{{ record.get('Glucose') }}</td>
+               <td>{{ record.get('BloodPressure') }}</td>
+               <td>{{ record.get('SkinThickness') }}</td>
+               <td>{{ record.get('Insulin') }}</td>
+               <td>{{ record.get('BMI') }}</td>
+               <td>{{ record.get('DiabetesPedigreeFunction') }}</td>
+               <td>{{ record.get('prediction_result') }}</td>
+             </tr>
+             {% endfor %}
+          </table>
+        {% else %}
+          <p>No medical data available.</p>
+        {% endif %}
+        
+        <h3>Medical Graph (Multiple Metrics over Time)</h3>
+        <canvas id="metricsChart" width="800" height="400"></canvas>
+        
+        <script>
+          // Build the labels array using the created_datetime of each record.
+          var labels = [
+              {% for record in records %}
+                 "{{ record.get('created_datetime') | formatdatetime }}"{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          
+          // Build arrays for each metric.
+          var pregnanciesData = [
+              {% for record in records %}
+                 {{ record.get('Pregnancies') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var glucoseData = [
+              {% for record in records %}
+                 {{ record.get('Glucose') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var bloodPressureData = [
+              {% for record in records %}
+                 {{ record.get('BloodPressure') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var skinThicknessData = [
+              {% for record in records %}
+                 {{ record.get('SkinThickness') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var insulinData = [
+              {% for record in records %}
+                 {{ record.get('Insulin') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var bmiData = [
+              {% for record in records %}
+                 {{ record.get('BMI') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          var dpfData = [
+              {% for record in records %}
+                 {{ record.get('DiabetesPedigreeFunction') }}{% if not loop.last %},{% endif %}
+              {% endfor %}
+          ];
+          
+          var ctx = document.getElementById('metricsChart').getContext('2d');
+          var metricsChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: labels,
+                  datasets: [
+                      {
+                          label: 'Pregnancies',
+                          data: pregnanciesData,
+                          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                          borderColor: 'rgba(255, 99, 132, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'Glucose',
+                          data: glucoseData,
+                          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                          borderColor: 'rgba(75, 192, 192, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'Blood Pressure',
+                          data: bloodPressureData,
+                          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                          borderColor: 'rgba(54, 162, 235, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'Skin Thickness',
+                          data: skinThicknessData,
+                          backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                          borderColor: 'rgba(255, 206, 86, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'Insulin',
+                          data: insulinData,
+                          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                          borderColor: 'rgba(153, 102, 255, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'BMI',
+                          data: bmiData,
+                          backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                          borderColor: 'rgba(255, 159, 64, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      },
+                      {
+                          label: 'Diabetes Pedigree Function',
+                          data: dpfData,
+                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                          borderColor: 'rgba(0, 0, 0, 1)',
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.1
+                      }
+                  ]
+              },
+              options: {
+                  scales: {
+                      x: {
+                          display: true,
+                          title: {
+                              display: true,
+                              text: 'Created Date & Time'
+                          }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          title: {
+                              display: true,
+                              text: 'Values'
+                          }
+                      }
+                  }
+              }
+          });
+        </script>
+    </div>
+</body>
+</html>
