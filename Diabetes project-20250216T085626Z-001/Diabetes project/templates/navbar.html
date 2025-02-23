@@ -1,0 +1,129 @@
+<nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-left">
+        <a href="" class="navbar-brand">Diabetes_Prediction</a>
+        <ul class="navbar-nav">
+          {% if user %}
+            {% if user.role == 'doctor' %}
+              <li><a href="/doctor_dashboard">Doctor Dashboard</a></li>
+              <li><a href="/doctor_view_patient_select">View Patient Details</a></li>
+               {% elif user.role == 'patient' %}
+              <li><a href="/patient_dashboard">Patient Dashboard</a></li>
+            {% endif %}
+          {% else %}
+            <!-- Optionally display both if no user is logged in -->
+            <li><a href="/doctor_dashboard">Doctor Dashboard</a></li>
+            <li><a href="/patient_dashboard">Patient Dashboard</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      <div class="navbar-right">
+        {% if user %}
+          <span id="greeting"></span>
+          <span>{{ user.name }}</span>
+          <a href="{{ url_for('login') }}" class="logout-btn">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="login-btn">Login</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+  <style>
+    /* Fixed Navbar Styles */
+    .navbar {
+      background-color: #007bff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+    .navbar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    /* Left section: Brand and Navigation Links */
+    .navbar-left {
+      display: flex;
+      align-items: center;
+    }
+    .navbar-brand {
+      color: #fff;
+      font-size: 24px;
+      margin-left: -50px;
+      font-weight: bold;
+      text-decoration: none;
+      margin-right: 20px;
+    }
+    .navbar-nav {
+      list-style: none;
+      display: flex;
+      margin: 0;
+      padding: 0;
+    }
+    .navbar-nav li {
+      margin: 0 10px;
+    }
+    .navbar-nav li a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 5px 10px;
+      transition: background-color 0.3s ease;
+    }
+    .navbar-nav li a:hover {
+      background-color: #0056b3;
+      border-radius: 4px;
+    }
+    /* Right section: User info and Logout/Login button */
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+    }
+    .navbar-right span {
+      font-size: 16px;
+    }
+    .logout-btn, .login-btn {
+      background-color: #dc3545;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+    }
+    .logout-btn:hover {
+      background-color: #c82333;
+    }
+    .login-btn {
+      background-color: #28a745;
+    }
+    .login-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+  <script>
+    // Calculate greeting based on current time
+    (function() {
+      const greetingElement = document.getElementById('greeting');
+      if (greetingElement) {
+        const now = new Date();
+        const hour = now.getHours();
+        let greetingText = '';
+        if (hour < 12) {
+          greetingText = 'Good Morning, ';
+        } else if (hour < 18) {
+          greetingText = 'Good Afternoon, ';
+        } else {
+          greetingText = 'Good Evening, ';
+        }
+        greetingElement.textContent = greetingText;
+      }
+    })();
+  </script>
+  
