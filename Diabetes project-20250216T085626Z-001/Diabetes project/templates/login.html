@@ -1,85 +1,150 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f4f4f4;
+            background-image: url('https://i.ibb.co/jv1TBrSk/shared-image.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            /* background-color: #b0d4e3;  */
             text-align: center;
             padding-top: 50px;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
         }
+
+        .login-container {
+            float: left;
+            margin-left: 50px;
+            /* Adjust margin as needed */
+            max-width: 350px;
+            width: 90%;
+            text-align: left;
+        }
+
+        h2 {
+            font-size: 2vw;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
         form {
-            display: inline-block;
-            background: #fff;
-            padding: 50px 80px;
-            margin-top: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            padding-inline-start: 50px;
+            margin: 100px 0;
+            width: 350px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
+
         label {
             display: block;
             text-align: left;
             margin-bottom: 5px;
             font-weight: bold;
+            color: #555;
         }
+
         input[type="email"],
         input[type="password"] {
-            width: 100%;
+            width: 90%;
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 15px;
+            font-size: 14px;
         }
+
         button {
-            background-color: #28a745;
+            background-color: #1969ff;
             color: white;
             padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 16px;
+            width: 97%;
         }
+
         button:hover {
             background-color: #218838;
         }
+
         p {
-            margin-top: 20px;
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
         }
+
         a {
-            color: #007bff;
+            color: #333;
             text-decoration: none;
+            font-weight: bold;
         }
+
         a:hover {
+            color: #000;
             text-decoration: underline;
         }
+
         ul {
             list-style: none;
             padding: 0;
-            margin-top: 20px;
+            margin-top: 15px;
         }
+
         li {
             color: red;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                float: none;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            form {
+                padding: 30px;
+            }
+
+            h2 {
+                font-size: 5vw;
+            }
         }
     </style>
 </head>
+
 <body>
-    <h2>Login</h2>
-    <form method="POST">
-        <label>Email:</label>
-        <input type="email" name="email" required>
-        <label>Password:</label>
-        <input type="password" name="password" required>
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
+    <div class="login-container">
+        <form method="POST">
+            <h2>Login</h2>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Login</button>
+            <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
+        </form>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
         <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
+            {% for message in messages %}
+            <li>{{ message }}</li> 
+            {% endfor %}
         </ul>
-      {% endif %}
-    {% endwith %}
+        {% endif %}
+        {% endwith %}
+    </div>
 </body>
+
 </html>
