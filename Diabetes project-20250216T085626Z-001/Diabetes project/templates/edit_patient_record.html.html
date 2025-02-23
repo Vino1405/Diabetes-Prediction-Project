@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Patient Record</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+         body {
+            font-family: Arial, sans-serif;
+            /* background: #f4f4f4; */
+            margin: 0;
+            padding: 20px;
+            background-image: url('https://i.ibb.co/PZT77G0V/Media.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: right;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #ffffffe6;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        form input[type="number"] {
+            width: 97%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        form button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #218838;
+        }
+        .actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+        <h2>Edit Patient Record</h2>
+        <form method="POST">
+            <label>Pregnancies:</label>
+            <input type="number" name="Pregnancies" value="{{ record.get('Pregnancies') }}" required>
+            
+            <label>Glucose:</label>
+            <input type="number" name="Glucose" value="{{ record.get('Glucose') }}" required>
+            
+            <label>Blood Pressure:</label>
+            <input type="number" name="BloodPressure" value="{{ record.get('BloodPressure') }}" required>
+            
+            <label>Skin Thickness:</label>
+            <input type="number" name="SkinThickness" value="{{ record.get('SkinThickness') }}" required>
+            
+            <label>Insulin:</label>
+            <input type="number" name="Insulin" value="{{ record.get('Insulin') }}" required>
+            
+            <label>BMI:</label>
+            <input type="number" step="0.001" name="BMI" value="{{ record.get('BMI') }}" required>
+            
+            <label>Diabetes Pedigree Function:</label>
+            <input type="number" step="0.001" name="DiabetesPedigreeFunction" value="{{ record.get('DiabetesPedigreeFunction') }}" required>
+            
+            <button type="submit">Update Record</button>
+        </form>
+        <div class="actions">
+            <a href="/doctor_view_patient_select/{{ record.userid }}">Back to Patient Data</a>
+        </div>
+    </div>
+</body>
+</html>
