@@ -103,6 +103,7 @@ def doctor_dashboard():
     
     if request.method == 'POST':
         selected_user_id = request.form.get('patient_id')
+
         patient_user = users_collection.find_one({'_id': ObjectId(selected_user_id)})
         if not patient_user or not patient_user.get('age'):
             flash("Patient age not found!")
@@ -145,6 +146,7 @@ def doctor_dashboard():
             'updated_datetime': current_time
         }
         
+        # Always insert a new record to preserve full history.
         patients_collection.insert_one(patient_data)
         flash("Patient data added! Prediction: " + prediction_text)
         return redirect(url_for('doctor_dashboard'))
