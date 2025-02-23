@@ -67,7 +67,6 @@ def login():
             session['user_id'] = str(user['_id'])
             session['role'] = user['role']
             flash("Logged in successfully!")
-            # Instead of a direct redirect, render a redirect template:
             if user['role'] == 'patient':
                 target = url_for('patient_dashboard')
             elif user['role'] == 'doctor':
@@ -77,12 +76,10 @@ def login():
                 return redirect(url_for('login'))
             return render_template('redirect.html', target=target)
         else:
-            flash("Invalid email or password!")
+            flash("Invalid email or password!") 
             return redirect(url_for('login'))
     return render_template('login.html')
 
-
-# Patient dashboard: shows patient info and all historical medical records.
 @app.route('/patient_dashboard')
 def patient_dashboard():
     if 'user_id' not in session or session.get('role') != 'patient':
@@ -91,21 +88,21 @@ def patient_dashboard():
     
     user_id = session['user_id']
     user = users_collection.find_one({'_id': ObjectId(user_id)})
-    # Fetch all records for this patient, sorted by created_datetime (most recent first)
     records = list(patients_collection.find({'userid': user_id}).sort('created_datetime', -1))
     
     return render_template('patient_dashboard.html', user=user, records=records)
 
-# Doctor dashboard: allows adding new patient medical data (each submission creates a new record)
 @app.route('/doctor_dashboard', methods=['GET', 'POST'])
 def doctor_dashboard():
     if 'user_id' not in session or session.get('role') != 'doctor':
         flash("Please log in as a doctor.")
         return redirect(url_for('login'))
     
+    user_id = session['user_id']
+    user = users_collection.find_one({'_id': ObjectId(user_id)})
+    
     if request.method == 'POST':
         selected_user_id = request.form.get('patient_id')
-        # Fetch the patient's age from the users collection.
         patient_user = users_collection.find_one({'_id': ObjectId(selected_user_id)})
         if not patient_user or not patient_user.get('age'):
             flash("Patient age not found!")
@@ -148,13 +145,41 @@ def doctor_dashboard():
             'updated_datetime': current_time
         }
         
-        # Always insert a new record to preserve full history.
         patients_collection.insert_one(patient_data)
         flash("Patient data added! Prediction: " + prediction_text)
         return redirect(url_for('doctor_dashboard'))
     
     patients = list(users_collection.find({'role': 'patient'}))
-    return render_template('doctor_dashboard.html', patients=patients)
+    return render_template('doctor_dashboard.html', patients=patients, user=user)  # Pass the user variable
+
+
+@app.route('/doctor_view_patient_select', methods=['GET', 'POST'])
+def doctor_view_patient_select():
+    if 'user_id' not in session or session.get('role') != 'doctor':
+        flash("Please log in as a doctor.")
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    user = users_collection.find_one({'_id': ObjectId(user_id)})
+    # Fetch all patients for the dropdown
+    patients = list(users_collection.find({'role': 'patient'}))
+    
+    # Initialize variables for patient data
+    patient_records = None
+    selected_patient = None
+    
+    if request.method == 'POST':
+        # Get the selected patient ID from the form
+        selected_patient_id = request.form.get('patient_id')
+        if selected_patient_id:
+            # Fetch the selected patient's details
+            selected_patient = users_collection.find_one({'_id': ObjectId(selected_patient_id)})
+            if selected_patient:
+                # Fetch the selected patient's medical records
+                patient_records = list(patients_collection.find({'userid': selected_patient_id}).sort('created_datetime', -1))
+            else:
+                flash("Patient not found!")
+    
+    return render_template('doctor_view_patient_select.html', patients=patients, patient_records=patient_records, selected_patient=selected_patient,user=user)
 
 # View patient data in table format with Edit/Delete options.
 @app.route('/doctor_view_patient/<patient_id>')
@@ -162,20 +187,35 @@ def doctor_view_patient(patient_id):
     if 'user_id' not in session or session.get('role') != 'doctor':
         flash("Please log in as a doctor.")
         return redirect(url_for('login'))
+    
+    # Fetch the patient's details
     user_data = users_collection.find_one({'_id': ObjectId(patient_id)})
+    if not user_data:
+        flash("Patient not found!")
+        return redirect(url_for('doctor_dashboard'))
+    
+    # Fetch the patient's medical records
     patient_records = list(patients_collection.find({'userid': patient_id}).sort('created_datetime', -1))
+    
     return render_template('doctor_view_patient.html', patient_records=patient_records, user=user_data)
 
-# Edit patient record.
-@app.route('/edit_patient/<patient_id>', methods=['GET', 'POST'])
-def edit_patient(patient_id):
+
+@app.route('/edit_patient_record/<record_id>', methods=['GET', 'POST'])
+def edit_patient_record(record_id):
     if 'user_id' not in session or session.get('role') != 'doctor':
         flash("Please log in as a doctor.")
         return redirect(url_for('login'))
-    # For editing, fetch the most recent record.
-    patient_record = patients_collection.find_one({'userid': patient_id}, sort=[('created_datetime', -1)])
+    user_id = session['user_id']
+    user = users_collection.find_one({'_id': ObjectId(user_id)})
+    # Fetch the record to be edited
+    record = patients_collection.find_one({'_id': ObjectId(record_id)})
+    if not record:
+        flash("Record not found!")
+        return redirect(url_for('doctor_view_patient_select'))
+    
     if request.method == 'POST':
         try:
+            # Get updated data from the form
             pregnancies = float(request.form.get('Pregnancies'))
             glucose = float(request.form.get('Glucose'))
             blood_pressure = float(request.form.get('BloodPressure'))
@@ -185,18 +225,21 @@ def edit_patient(patient_id):
             dpf = float(request.form.get('DiabetesPedigreeFunction'))
         except Exception as e:
             flash("Invalid input: " + str(e))
-            return redirect(url_for('edit_patient', patient_id=patient_id))
+            return redirect(url_for('edit_patient_record', record_id=record_id))
         
-        user_data = users_collection.find_one({'_id': ObjectId(patient_id)})
+        # Fetch the patient's age from the users collection
+        patient_user = users_collection.find_one({'_id': ObjectId(record['userid'])})
         try:
-            patient_age = float(user_data.get('age'))
+            patient_age = float(patient_user.get('age'))
         except Exception:
             patient_age = 0.0
         
+        # Make a prediction with the updated data
         input_data = [[pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi, dpf, patient_age]]
         prediction = model.predict(input_data)
         prediction_text = 'Diabetes' if prediction[0] == 1 else 'No Diabetes'
         
+        # Update the record
         update_data = {
             'Pregnancies': pregnancies,
             'Glucose': glucose,
@@ -209,10 +252,11 @@ def edit_patient(patient_id):
             'prediction_result': prediction_text,
             'updated_datetime': datetime.datetime.now()
         }
-        patients_collection.update_one({'_id': patient_record['_id']}, {"$set": update_data})
-        flash("Patient record updated! Prediction: " + prediction_text)
-        return redirect(url_for('doctor_view_patient', patient_id=patient_id))
-    return render_template('edit_patient.html', patient=patient_record)
+        patients_collection.update_one({'_id': ObjectId(record_id)}, {"$set": update_data})
+        flash("Record updated successfully!")
+        return redirect(url_for('doctor_view_patient', patient_id=record['userid']))
+    
+    return render_template('edit_patient_record.html', record=record, user=user)
 
 # Delete patient record.
 @app.route('/delete_patient/<patient_id>', methods=['POST'])
@@ -224,6 +268,24 @@ def delete_patient(patient_id):
     patients_collection.delete_many({'userid': patient_id})
     flash("Patient records deleted.")
     return redirect(url_for('doctor_dashboard'))
+@app.route('/delete_patient_record/<record_id>', methods=['POST'])
+def delete_patient_record(record_id):
+    if 'user_id' not in session or session.get('role') != 'doctor':
+        flash("Please log in as a doctor.")
+        return redirect(url_for('login'))
+    
+    # Fetch the record to get the patient ID for redirection
+    record = patients_collection.find_one({'_id': ObjectId(record_id)})
+    if not record:
+        flash("Record not found!")
+        return redirect(url_for('doctor_view_patient_select'))
+    
+    # Delete the specific record
+    patients_collection.delete_one({'_id': ObjectId(record_id)})
+    flash("Record deleted successfully!")
+    
+    # Redirect back to the patient's data page
+    return redirect(url_for('doctor_view_patient_select', patient_id=record['userid']))
 
 if __name__ == '__main__':
     # Prevent duplicate default doctor creation when using Flask's debug reloader.
