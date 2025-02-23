@@ -1,276 +1,343 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Patient Dashboard</title>
-    <!-- Include Chart.js from a CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h2, h3 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        p {
-            font-size: 16px;
-            color: #333;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-        th, td {
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: #fff;
-        }
-        canvas {
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+  <title>Patient Dashboard</title>
+  <!-- Include Chart.js from a CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include html2pdf library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    /* Remove default browser margin/padding */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2, h3 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 16px;
+      color: #333;
+      margin: 5px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
+    .download-btn {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 10px;
+      background: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .download-btn:hover {
+      background: #218838;
+    }
+    .top-text {
+        margin: 0 auto;
+        padding: 5px;
+        background-color: aquamarine;
+        border-radius: 20px;
+        border: 1px solid grey;
+        text-align: center;
+        
+    }
+    
+    /* Print-specific CSS to adjust scaling and spacing in PDF */
+    @media print {
+      #dashboardContent {
+        transform: scale(0.8);
+        transform-origin: top ;
+      }
+      table {
+        font-size: 12px;
+      }
+      #metricsChart {
+        margin-bottom: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Welcome, {{ user.name }}</h2>
-        
-        <h3>Your Information</h3>
-        <p>Email: {{ user.email }}</p>
-        <p>Age: {{ user.age or 'Not provided' }}</p>
-        
-        <h3>Medical History</h3>
-        {% if records %}
-          <table>
-             <tr>
-               <th>Created Date & Time</th>
-               <th>Updated Date & Time</th>
-               <th>Pregnancies</th>
-               <th>Glucose</th>
-               <th>Blood Pressure</th>
-               <th>Skin Thickness</th>
-               <th>Insulin</th>
-               <th>BMI</th>
-               <th>Diabetes Pedigree Function</th>
-               <th>Prediction</th>
-             </tr>
-             {% for record in records %}
-             <tr>
-               <td>{{ record.get('created_datetime') | formatdatetime }}</td>
-               <td>{{ record.get('updated_datetime') | formatdatetime }}</td>
-               <td>{{ record.get('Pregnancies') }}</td>
-               <td>{{ record.get('Glucose') }}</td>
-               <td>{{ record.get('BloodPressure') }}</td>
-               <td>{{ record.get('SkinThickness') }}</td>
-               <td>{{ record.get('Insulin') }}</td>
-               <td>{{ record.get('BMI') }}</td>
-               <td>{{ record.get('DiabetesPedigreeFunction') }}</td>
-               <td>{{ record.get('prediction_result') }}</td>
-             </tr>
-             {% endfor %}
-          </table>
-        {% else %}
-          <p>No medical data available.</p>
-        {% endif %}
-        
-        <h3>Medical Graph (Multiple Metrics over Time)</h3>
-        <canvas id="metricsChart" width="800" height="400"></canvas>
-        
-        <script>
-          // Build the labels array using the created_datetime of each record.
-          var labels = [
-              {% for record in records %}
-                 "{{ record.get('created_datetime') | formatdatetime }}"{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          
-          // Build arrays for each metric.
-          var pregnanciesData = [
-              {% for record in records %}
-                 {{ record.get('Pregnancies') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var glucoseData = [
-              {% for record in records %}
-                 {{ record.get('Glucose') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var bloodPressureData = [
-              {% for record in records %}
-                 {{ record.get('BloodPressure') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var skinThicknessData = [
-              {% for record in records %}
-                 {{ record.get('SkinThickness') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var insulinData = [
-              {% for record in records %}
-                 {{ record.get('Insulin') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var bmiData = [
-              {% for record in records %}
-                 {{ record.get('BMI') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          var dpfData = [
-              {% for record in records %}
-                 {{ record.get('DiabetesPedigreeFunction') }}{% if not loop.last %},{% endif %}
-              {% endfor %}
-          ];
-          
-          var ctx = document.getElementById('metricsChart').getContext('2d');
-          var metricsChart = new Chart(ctx, {
-              type: 'line',
-              data: {
-                  labels: labels,
-                  datasets: [
-                      {
-                          label: 'Pregnancies',
-                          data: pregnanciesData,
-                          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                          borderColor: 'rgba(255, 99, 132, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'Glucose',
-                          data: glucoseData,
-                          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                          borderColor: 'rgba(75, 192, 192, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'Blood Pressure',
-                          data: bloodPressureData,
-                          backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                          borderColor: 'rgba(54, 162, 235, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'Skin Thickness',
-                          data: skinThicknessData,
-                          backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                          borderColor: 'rgba(255, 206, 86, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'Insulin',
-                          data: insulinData,
-                          backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                          borderColor: 'rgba(153, 102, 255, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'BMI',
-                          data: bmiData,
-                          backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                          borderColor: 'rgba(255, 159, 64, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      },
-                      {
-                          label: 'Diabetes Pedigree Function',
-                          data: dpfData,
-                          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                          borderColor: 'rgba(0, 0, 0, 1)',
-                          borderWidth: 1,
-                          fill: false,
-                          tension: 0.1
-                      }
-                  ]
-              },
-              options: {
-                  scales: {
-                      x: {
-                          display: true,
-                          title: {
-                              display: true,
-                              text: 'Created Date & Time'
-                          }
-                      },
-                      y: {
-                          beginAtZero: true,
-                          title: {
-                              display: true,
-                              text: 'Values'
-                          }
-                      }
-                  }
-              }
-          });
-        </script>
+  <div class="container" id="dashboardContent">
+    <h2>Welcome, {{ user.name }}</h2>
+    
+    <p class ="top-text"><strong>Email</strong>: {{ user.email }}  &nbsp; &nbsp; |  &nbsp; &nbsp;<strong>Age</strong>: {{ user.age or 'Not provided' }}</p>
+    
+    <h3>Medical History</h3>
+    {% if records %}
+      <table>
+        <tr>
+          <th>Date & Time</th>
+          <th>Pregnancies</th>
+          <th>Glucose</th>
+          <th>Blood Pressure</th>
+          <th>Skin Thickness</th>
+          <th>Insulin</th>
+          <th>BMI</th>
+          <th>Diabetes Pedigree Function</th>
+          <th>Prediction</th>
+        </tr>
+        {% for record in records %}
+        <tr>
+          <td>{{ record.get('updated_datetime') | formatdatetime }}</td>
+          <td>{{ record.get('Pregnancies') }}</td>
+          <td>{{ record.get('Glucose') }}</td>
+          <td>{{ record.get('BloodPressure') }}</td>
+          <td>{{ record.get('SkinThickness') }}</td>
+          <td>{{ record.get('Insulin') }}</td>
+          <td>{{ record.get('BMI') }}</td>
+          <td>{{ record.get('DiabetesPedigreeFunction') }}</td>
+          <td>{{ record.get('prediction_result') }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p>No medical data available.</p>
+    {% endif %}
+    
+    <h3>Medical Graph (Multiple Metrics over Time)</h3>
+    <canvas id="metricsChart" width="800" height="400"></canvas>
+    
+    <h3>Medical Prediction Distribution</h3>
+    <canvas id="predictionPieChart" width="400" height="400"></canvas>
+  </div>
+  
+  <!-- Download PDF button -->
+  <button class="download-btn" id="downloadPDF">Download as PDF</button>
+  
+  <script>
+    // Build the labels array using the created_datetime of each record.
+    var labels = [
+      {% for record in records %}
+        "{{ record.get('created_datetime') | formatdatetime }}"{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    
+    // Build arrays for each metric.
+    var pregnanciesData = [
+      {% for record in records %}
+        {{ record.get('Pregnancies') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var glucoseData = [
+      {% for record in records %}
+        {{ record.get('Glucose') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var bloodPressureData = [
+      {% for record in records %}
+        {{ record.get('BloodPressure') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var skinThicknessData = [
+      {% for record in records %}
+        {{ record.get('SkinThickness') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var insulinData = [
+      {% for record in records %}
+        {{ record.get('Insulin') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var bmiData = [
+      {% for record in records %}
+        {{ record.get('BMI') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    var dpfData = [
+      {% for record in records %}
+        {{ record.get('DiabetesPedigreeFunction') }}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
+    
+    // Create line chart for multiple metrics.
+    var ctx = document.getElementById('metricsChart').getContext('2d');
+    var metricsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Pregnancies',
+            data: pregnanciesData,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Glucose',
+            data: glucoseData,
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Blood Pressure',
+            data: bloodPressureData,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Skin Thickness',
+            data: skinThicknessData,
+            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+            borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Insulin',
+            data: insulinData,
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderColor: 'rgba(153, 102, 255, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'BMI',
+            data: bmiData,
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            borderColor: 'rgba(255, 159, 64, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          },
+          {
+            label: 'Diabetes Pedigree Function',
+            data: dpfData,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+            borderColor: 'rgba(0, 0, 0, 1)',
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1
+          }
+        ]
+      },
+      options: {
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: 'Created Date & Time'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Values'
+            }
+          }
+        }
+      }
+    });
+    
+    // Count predictions using Jinja filters.
+    var diabetesCount = {{ records | selectattr("prediction_result", "equalto", "Diabetes") | list | length }};
+    var noDiabetesCount = {{ records | selectattr("prediction_result", "ne", "Diabetes") | list | length }};
+    
+    // Create pie chart for prediction distribution.
+    var ctxPie = document.getElementById('predictionPieChart').getContext('2d');
+    var predictionPieChart = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: ['Diabetes', 'No Diabetes'],
+        datasets: [{
+          data: [diabetesCount, noDiabetesCount],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)'
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top'
+          },
+          title: {
+            display: true,
+            text: 'Prediction Distribution'
+          }
+        }
+      }
+    });
+    
+    // PDF Download Functionality
+    document.getElementById('downloadPDF').addEventListener('click', function () {
+      const element = document.getElementById('dashboardContent');
+      
+      // Dynamically apply style adjustments for PDF capture
+      element.style.transform = 'scale(0.8)';
+      element.style.transformOrigin = 'top';
+      document.getElementById('metricsChart').style.marginBottom = '20px';
+      
+      const options = {
+        margin: 0,
+        filename: 'patient_dashboard.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, logging: true, useCORS: true, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
 
-        <h3>Medical Prediction Distribution</h3>
-        <canvas id="predictionPieChart" width="400" height="400"></canvas>
-        
-        <script>
-          // Count predictions using Jinja filters.
-          var diabetesCount = {{ records | selectattr("prediction_result", "equalto", "Diabetes") | list | length }};
-          var noDiabetesCount = {{ records | selectattr("prediction_result", "ne", "Diabetes") | list | length }};
-        
-          var ctx = document.getElementById('predictionPieChart').getContext('2d');
-          var predictionPieChart = new Chart(ctx, {
-              type: 'pie',
-              data: {
-                  labels: ['Diabetes', 'No Diabetes'],
-                  datasets: [{
-                      data: [diabetesCount, noDiabetesCount],
-                      backgroundColor: [
-                          'rgba(255, 99, 132, 0.7)',
-                          'rgba(54, 162, 235, 0.7)'
-                      ],
-                      borderColor: [
-                          'rgba(255, 99, 132, 1)',
-                          'rgba(54, 162, 235, 1)'
-                      ],
-                      borderWidth: 1
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  plugins: {
-                      legend: {
-                          position: 'top'
-                      },
-                      title: {
-                          display: true,
-                          text: 'Prediction Distribution'
-                      }
-                  }
-              }
-          });
-        </script>
-    </div>
+      // Generate the PDF and then reset the temporary styles
+      html2pdf().set(options).from(element).save().then(() => {
+        element.style.transform = '';
+        element.style.transformOrigin = '';
+        document.getElementById('metricsChart').style.marginBottom = '';
+      });
+    });
+  </script>
 </body>
 </html>
