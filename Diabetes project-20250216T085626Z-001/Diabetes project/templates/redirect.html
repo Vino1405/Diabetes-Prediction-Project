@@ -1,24 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redirecting...</title>
-    <script>
-        // Redirect after 3 seconds
-        setTimeout(function(){
-            window.location.href = "{{ target }}";
-        }, 2000);
-    </script>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #2c303a;
+      color: #fff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      margin: 300px auto;
+      width: 500px;
+    }
+    
+    .message-top {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    
+    .progress {
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 50px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px rgba(255, 255, 255, 0.08);
+      margin-bottom: 20px;
+    }
+    
+    .progress-bar {	
+      height: 18px;
+      background-color: #ee303c;  
+      border-radius: 50px; 
+      transition: width 0.4s linear, background-color 0.4s linear;    
+    }
+    
+    .progress-striped .progress-bar { 	
+      background-color: #1969ff; 
+      width: 100%; 
+      background-image: linear-gradient(
+        45deg, #2c4fdf 25%, 
+        transparent 25%, transparent 50%, 
+        #2c4fdf 50%, #2c4fdf 75%,
+        transparent 75%, transparent); 
+      animation: progressAnimationStrike 3s;
+    }
+    
+    @keyframes progressAnimationStrike {
+      from { width: 0; }
+      to   { width: 100%; }
+    }
+  </style>
 </head>
 <body>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+  <div class="container">
+    <p class="message-top">Processing your request...</p>
+    
+    <div class="progress progress-striped">
+      <div class="progress-bar"></div>
+    </div>
+    
     <p>You will be redirected shortly...</p>
+  </div>
+  
+  <script>
+    // Redirect after 2 seconds
+    setTimeout(function(){
+      window.location.href = "{{ target }}";
+    }, 2000);
+  </script>
 </body>
 </html>
